@@ -1,6 +1,6 @@
 /****************************************************/
 /* Laboratoy No 2 trafic light with pedestrian Light*/
-/*                        Roman Lopez Ph. D.        */
+/*  Marco Antonio Acevedo Gonzalez    */
 /****************************************************/  
  
 //Stoplight A Pin number definitions
@@ -14,26 +14,30 @@
 #define stB_red 8
 #define stB_yellow 7
 #define stB_green 6
-#define crossB 5 //Blue LED that allows pedestrians to crossA
+#define crossB 5 //Blue LED that allows pedestrians to crossB
 #define buttonB 3
 
-#define Delay_time 1000 //milis
+//Global Delay is 1s
+#define Delay_time 1000
 
-#define green_time 4 //int i 
+//This value is multiplied by the global delay
+#define green_time 4 
 #define yellow_time 4
 #define red_time 4
 
-int i = 0;
 
-
+//Keeps Track of the current Cycle and Pedestrian Flags
+volatile int global_state;
 volatile int FlagA;
 volatile int FlagB;
 
-volatile int global_state;
+//No Used
 volatile int lightA_state; //green = 1, yellow = 2, red = 3
 volatile int lightB_state; //green = 1, yellow = 2, red = 3
+int i = 0;
 
 void setup() {
+ //Enabling Each Pin As IO
   pinMode(crossA, OUTPUT);
   pinMode(stA_red,OUTPUT);
   pinMode(stA_yellow, OUTPUT);
@@ -46,36 +50,37 @@ void setup() {
   pinMode(stB_green, OUTPUT);
   pinMode(buttonB, INPUT_PULLUP);
 
-  attachInterrupt(digitalPinToInterrupt(buttonA),SetFlagA,CHANGE); //Attached the Interrup subroutine
-  attachInterrupt(digitalPinToInterrupt(buttonB),SetFlagB,CHANGE); //Attached the Interrup subroutine
+ //Define the Pin to ISR
+  attachInterrupt(digitalPinToInterrupt(buttonA),SetFlagA,CHANGE); //Attached the Interrupt subroutine
+  attachInterrupt(digitalPinToInterrupt(buttonB),SetFlagB,CHANGE); //Attached the Interrupt subroutine
 
-  Serial.begin(9600);
-  
+  Serial.begin(9600); //Used for debugging
+
+ //Assigning Initial Value to variables
   FlagA=0;
   FlagB=0;
-
   global_state = 0;
 }
 
-void pedAoff(){
+void pedAoff(){ //Turns White LED for pedestrian A
   digitalWrite(crossA,LOW);
 }
 
-void pedAon(){
+void pedAon(){// Turns on White LED so Pedestrian A can cross
   digitalWrite(crossA,HIGH);
 }
 
-void pedBoff(){
+void pedBoff(){// Turns off Blue LED for Pedestrian B
   digitalWrite(crossB,LOW);
 }
 
-void pedBon(){
+void pedBon(){//Turns on Blue LED so Pedestrian B can cross
   digitalWrite(crossB,HIGH);
 }
 
-void doByState(){
+void doByState(){// Desiscion making function. Decides what to do based on the global_state variable
    switch (global_state) {
-    case 0:{//EMERGENCY
+    case 0:{//EMERGENCY stoplights will blink
       for(i=0;i<8;i++){
         allOff();
         delay(250);
@@ -84,7 +89,7 @@ void doByState(){
       }
       break;
     }
-      case 1:{//All Red
+      case 1:{//All stoplights are turned Red
         allRed();
         delay(Delay_time * red_time);
         break;
@@ -107,7 +112,7 @@ void doByState(){
       delay(Delay_time * red_time);
       break;
     }
-  ///////////////////////////////////////////////////////////////////////////
+  
     case 5:{//Stoplight B Green
       stBsetGreen();
       delay(Delay_time * green_time);
@@ -119,43 +124,41 @@ void doByState(){
       delay(Delay_time * yellow_time);
       break;
     }
-    case 7:{//Stoplight B Red
-
-      if((FlagA + FlagB) > 0){ //Pedestrian is Waiting
-      allRed();
-      delay(Delay_time * red_time);
-        if((FlagA + FlagB) == 2){//2 pedestrians waiting
+    case 7:{//Flag checker. If no Pedestrian Flags are set, the global state is reset so the cycle can begin
+            //Handles next actions based on the number and Flag that is set
+      if((FlagA + FlagB) > 0){ //A Pedestrian is Waiting
+         allRed(); // Turns RED all stoplights to prepare traffic for pedestrians
+         delay(Delay_time * red_time);// Holds the stoplight RED to clear the road
+         if((FlagA + FlagB) == 2){//2 pedestrians waiting
           break;
-        }else{//Only 1 pedestrian waiting
-          
-          if(FlagA == 1){
-            break;
-          }else{
-            global_state++;
-            break;
-          }
+         }else{//Only 1 pedestrian waiting
+               if(FlagA == 1){
+                  break;
+               }else{
+                     global_state++;
+                     break;
+                }
 
 
-        }
+         }//Only 1 pedestrian waiting else end
 
-      }else{//No pedestrian waiting
+      }else{//No pedestrian waiting. This else is for the first If statement
         global_state = 0;
       }
-      //FLAG A + FLAG B >0? No -> global_state = 2 check for ++; YES -> if A case 8
       break;
-    }
+    }// End bracket for Case 7
 
     case 8:{//Pedestrian A Waiting
-      if(FlagA ==0){break;}
+      if(FlagA ==0){break;}//Skips this routine of there are no Pedestrian A waiting
+     
       FlagA = 0;
       pedAon();
       delay(Delay_time*5);
       pedAoff();
-      //if also B go to case 9, else case 2
-      if(FlagB == 1){
-        break;}
-      else{
-        global_state = 0;}
+     
+      //Checks to see if pedestrian B is also waiting
+      if(FlagB == 1){break;}
+      else{global_state = 0;}
       break;
     }
 
@@ -168,11 +171,10 @@ void doByState(){
       break;
     }
   //-----------------------------------------------------------------------
-     default:{
+     default:{//This should never happen, but if it does it turns on blinkers
       FlagA = 0;
       FlagB = 0;
-      global_state = 0;
-      //go to case 0
+      global_state = -1;
      };
     }//end Switch
 }

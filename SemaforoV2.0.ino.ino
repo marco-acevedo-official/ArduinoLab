@@ -24,11 +24,12 @@
 #define red_time 4
 
 int i = 0;
-int j,k;
-int FlagA;
-int FlagB;
 
-volatile int global_state = 0;
+
+volatile int FlagA;
+volatile int FlagB;
+
+volatile int global_state;
 volatile int lightA_state; //green = 1, yellow = 2, red = 3
 volatile int lightB_state; //green = 1, yellow = 2, red = 3
 
@@ -45,13 +46,14 @@ void setup() {
   pinMode(stB_green, OUTPUT);
   pinMode(buttonB, INPUT_PULLUP);
 
-  attachInterrupt(digitalPinToInterrupt(2),SetFlagA,CHANGE); //Attached the Interrup subroutine
-  attachInterrupt(digitalPinToInterrupt(3),SetFlagB,CHANGE); //Attached the Interrup subroutine
+  attachInterrupt(digitalPinToInterrupt(buttonA),SetFlagA,CHANGE); //Attached the Interrup subroutine
+  attachInterrupt(digitalPinToInterrupt(buttonB),SetFlagB,CHANGE); //Attached the Interrup subroutine
 
   Serial.begin(9600);
-
+  
   FlagA=0;
   FlagB=0;
+
   global_state = 0;
 }
 
@@ -75,15 +77,16 @@ void doByState(){
    switch (global_state) {
     case 0:{//EMERGENCY
       for(i=0;i<8;i++){
-      allOff();
-      delay(250);
-      allRed();
-      delay(250);
-  }
+        allOff();
+        delay(250);
+        allRed();
+        delay(250);
+      }
       break;
     }
       case 1:{//All Red
-        delay(Delay_time*red_time);
+        allRed();
+        delay(Delay_time * red_time);
         break;
       }
   //-----------------------------------------------------------------------
@@ -100,7 +103,7 @@ void doByState(){
     }
     
     case 4:{//Stoplight A Red
-      stAsetRed();
+      allRed();
       delay(Delay_time * red_time);
       break;
     }
@@ -117,44 +120,58 @@ void doByState(){
       break;
     }
     case 7:{//Stoplight B Red
-      stBsetRed();
-      delay(Delay_time * red_time);
 
-      if((FlagA + FlagB) > 0){//Pedestrian is Waiting
-        if((FlagA + FlagB) == 2){
+      if((FlagA + FlagB) > 0){ //Pedestrian is Waiting
+      allRed();
+      delay(Delay_time * red_time);
+        if((FlagA + FlagB) == 2){//2 pedestrians waiting
           break;
-        }else{
-          global_state = 9;
+        }else{//Only 1 pedestrian waiting
+          
+          if(FlagA == 1){
+            break;
+          }else{
+            global_state++;
+            break;
+          }
+
+
         }
 
-      }else{
-        global_state = 1;
+      }else{//No pedestrian waiting
+        global_state = 0;
       }
       //FLAG A + FLAG B >0? No -> global_state = 2 check for ++; YES -> if A case 8
       break;
     }
 
     case 8:{//Pedestrian A Waiting
+      if(FlagA ==0){break;}
       FlagA = 0;
       pedAon();
-      delay(Delay_time*2);
+      delay(Delay_time*5);
       pedAoff();
       //if also B go to case 9, else case 2
-      if(FlagB == 1){global_state = 9;}else{global_state = 1;}
+      if(FlagB == 1){
+        break;}
+      else{
+        global_state = 0;}
       break;
     }
 
     case 9:{//Pedestrian B Waiting
       FlagB = 0;
       pedBon();
-      delay(Delay_time*2);
+      delay(Delay_time*5);
       pedBoff();
-      global_state = 1;
+      global_state = 0;
       break;
     }
   //-----------------------------------------------------------------------
      default:{
-
+      FlagA = 0;
+      FlagB = 0;
+      global_state = 0;
       //go to case 0
      };
     }//end Switch

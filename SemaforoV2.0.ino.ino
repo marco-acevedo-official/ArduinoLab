@@ -62,7 +62,7 @@ void setup() {
   global_state = 0;
 }
 
-void pedAoff(){ //Turns White LED for pedestrian A
+void pedAoff(){ //Turns off White LED for pedestrian A
   digitalWrite(crossA,LOW);
 }
 

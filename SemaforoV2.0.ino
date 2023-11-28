@@ -1,21 +1,20 @@
-/****************************************************/
-/* Laboratoy No 2 trafic light with pedestrian Light*/
-/*  Marco Antonio Acevedo Gonzalez    */
-/****************************************************/  
+/* Laboratoy No 2 trafic light with pedestrian Light
+  Marco Antonio Acevedo Gonzalez  
+  Built on Arduino UNO */  
  
 //Stoplight A Pin number definitions
 #define stA_red 12
 #define stA_yellow 11
 #define stA_green 10
 #define crossA 9 //White LED that allows pedestrians to crossA
-#define buttonA 2
+#define buttonA 2 //Connected to Pin 2 and Ground
 
 //Stoplight B Pin number definitions
 #define stB_red 8
 #define stB_yellow 7
 #define stB_green 6
 #define crossB 5 //Blue LED that allows pedestrians to crossB
-#define buttonB 3
+#define buttonB 3 //Connected to Pin 3 and Ground
 
 //Global Delay is 1s
 #define Delay_time 1000

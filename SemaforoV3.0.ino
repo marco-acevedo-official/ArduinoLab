@@ -1,5 +1,5 @@
 /****************************************************/
-/* Laboratoy No 2 trafic light with pedestrian Light*/
+/* Laboratoy No 2 4 way trafic stoplight with pedestrian Light*/
 /*  Marco Antonio Acevedo Gonzalez    */
 /****************************************************/  
  
@@ -29,7 +29,8 @@
 #define WestButton 20
 
 //Global Delay is 1s
-#define Delay_time 1000
+#define fast_delay 250
+#define blink_delay 250
 
 //This value is multiplied by the global delay
 #define green_time 4 
@@ -46,12 +47,15 @@ volatile int FlagN;
 volatile int FlagE;
 volatile int FlagS;
 volatile int FlagW;
+volatile unsigned long Delay_time;
 
 const unsigned int blink = 0;
 const unsigned int red = 1;
 const unsigned int yellow  = 2;
 const unsigned int green = 3;
 const unsigned int crossing =4;
+const unsigned int off =5;
+
 int i = 0;
 
 void setup() {
@@ -89,6 +93,7 @@ void setup() {
   Serial.begin(9600); //Used for debugging
 
  //Assigning Initial Value to variables
+  Delay_time = 1000;
   FlagN=0;
   FlagE=0;
   FlagS=0;
@@ -97,10 +102,13 @@ void setup() {
   saved_state = 0;
 }
 
+/*Color changing functions
+  0=blink; 1=red; 2=yell; 3=green; 4=ped; 5=off
+*/
 void SetNorthStoplight(unsigned int color){//TO-DO
   switch(color){
     case 0:{//blink red
-      //TO-DO FUNCTION FOR ALL BLINKING
+      blinkStoplight();
       break;
     }
 
@@ -110,7 +118,7 @@ void SetNorthStoplight(unsigned int color){//TO-DO
         digitalWrite (NorthCross,LOW);
         digitalWrite (NorthRed,HIGH);
       break;
-    }
+      }
 
       case 2:{//Yellow
         digitalWrite (NorthGreen,LOW);
@@ -118,7 +126,7 @@ void SetNorthStoplight(unsigned int color){//TO-DO
         digitalWrite (NorthRed,LOW);
         digitalWrite (NorthYellow,HIGH);
       break;
-    }
+      }
 
       case 3:{//Green
         digitalWrite (NorthYellow,LOW);
@@ -126,7 +134,7 @@ void SetNorthStoplight(unsigned int color){//TO-DO
         digitalWrite (NorthRed,LOW);
         digitalWrite (NorthGreen,HIGH);
       break;
-    }
+      }
 
       case 4:{//Pedestrian Crossing
         digitalWrite (NorthGreen,LOW);
@@ -134,7 +142,19 @@ void SetNorthStoplight(unsigned int color){//TO-DO
         digitalWrite (NorthRed,HIGH);
         //TO-DO FUNCTION FOR PEDESTRIAN ALGORITHM
       break;
-    }
+      }
+
+      case 5:{// Turn off LED
+        digitalWrite (NorthGreen,LOW);
+        digitalWrite (NorthYellow,LOW);
+        digitalWrite (NorthRed,LOW);
+        digitalWrite (NorthCross,LOW);
+        break;
+      }
+
+      default:{
+        
+      }
   }
 }
 
@@ -142,7 +162,7 @@ void SetEastStoplight(unsigned int color){
 
   switch(color){
     case 0:{//blink red
-      //TO-DO FUNCTION FOR ALL BLINKING
+      blinkStoplight();
       break;
     }
 
@@ -177,6 +197,20 @@ void SetEastStoplight(unsigned int color){
         //TO-DO FUNCTION FOR PEDESTRIAN ALGORITHM
       break;
     }
+
+
+      case 5:{// Turn off LED
+        digitalWrite (EastGreen,LOW);
+        digitalWrite (EastYellow,LOW);
+        digitalWrite (EastRed,LOW);
+        digitalWrite (EastCross,LOW);
+        break;
+      }
+
+      default:{
+        
+      }
+
   }
 
 }
@@ -185,15 +219,15 @@ void SetSouthStoplight(unsigned int color){
 
   switch(color){
     case 0:{//blink red
-      //TO-DO FUNCTION FOR ALL BLINKING
+      blinkStoplight();
       break;
     }
 
       case 1:{//Red
         digitalWrite (SouthGreen,LOW);
-        digitalWrite (NorthYellow,LOW);
-        digitalWrite (NorthCross,LOW);
-        digitalWrite (NorthRed,HIGH);
+        digitalWrite (SouthYellow,LOW);
+        digitalWrite (SouthCross,LOW);
+        digitalWrite (SouthRed,HIGH);
       break;
     }
 
@@ -220,6 +254,16 @@ void SetSouthStoplight(unsigned int color){
         //TO-DO FUNCTION FOR PEDESTRIAN ALGORITHM
       break;
     }
+      case 5:{// Turn off LED
+        digitalWrite (SouthGreen,LOW);
+        digitalWrite (SouthYellow,LOW);
+        digitalWrite (SouthRed,LOW);
+        digitalWrite (SouthCross,LOW);
+        break;
+      }
+      default:{
+
+      }
   }
 
 }
@@ -228,11 +272,11 @@ void SetWestStoplight(unsigned int color){
 
   switch(color){
     case 0:{//blink red
-      //TO-DO FUNCTION FOR ALL BLINKING
+      blinkStoplight();
       break;
     }
 
-      case 1:{//Red
+    case 1:{//Red
         digitalWrite (WestGreen,LOW);
         digitalWrite (WestYellow,LOW);
         digitalWrite (WestCross,LOW);
@@ -240,15 +284,15 @@ void SetWestStoplight(unsigned int color){
       break;
     }
 
-      case 2:{//Yellow
+    case 2:{//Yellow
         digitalWrite (WestGreen,LOW);
         digitalWrite (WestCross,LOW);
-        digitalWrite (EWestRed,LOW);
+        digitalWrite (WestRed,LOW);
         digitalWrite (WestYellow,HIGH);
       break;
     }
 
-      case 3:{//Green
+    case 3:{//Green
         digitalWrite (WestYellow,LOW);
         digitalWrite (WestCross,LOW);
         digitalWrite (WestRed,LOW);
@@ -256,138 +300,62 @@ void SetWestStoplight(unsigned int color){
       break;
     }
 
-      case 4:{//Pedestrian Crossing
+    case 4:{//Pedestrian Crossing
         digitalWrite (WestGreen,LOW);
         digitalWrite (WestYellow,LOW);
         digitalWrite (WestRed,HIGH);
         //TO-DO FUNCTION FOR PEDESTRIAN ALGORITHM
       break;
     }
+    case 5:{//LED Off
+        digitalWrite (WestGreen,LOW);
+        digitalWrite (WestYellow,LOW);
+        digitalWrite (WestCross,LOW);
+        digitalWrite (WestRed,LOW);
+      break;
+    }
+
+    default:{
+
+    }
+
   }
 
 
 }
 
-void doByState(){// Desiscion making function. Decides what to do based on the global_state variable
-   switch (global_state) {
-    case 0:{//EMERGENCY stoplights will blink
-      for(i=0;i<red_blinks;i++){
-        //allOff();//TO-DO: No such function
-        delay(250);
-        allRed();
-        delay(250);
-      }
-      break;
-    }
-    case 1:{//All stoplights are turned Red
-      allRed();
-      delay(Delay_time * red_time);
-      break;
-    }
-    case 2:{//Stoplight A Green
-      SetNorthStoplight(2);
-      delay(Delay_time * green_time);
-        break;
-    }
-    case 3:{//Stoplight A Yellow
-      SetNorthStoplight(3);
-      delay(Delay_time * yellow_time);
-      break;
-    }
-    case 4:{//Stoplight A Red
-      allRed();
-      delay(Delay_time * red_time);
-      break;
-    }
-    case 5:{//Stoplight B Green
-      stBsetGreen();
-      delay(Delay_time * green_time);
-      break;
-    }
-    case 6:{//Stoplight B Yellow
-      stBsetYellow();
-      delay(Delay_time * yellow_time);
-      break;
-    }
-    case 7:{//Flag checker. If no Pedestrian Flags are set, the global state is reset so the cycle can begin
-            //Handles next actions based on the number and Flag that is set
-      if((FlagA + FlagB) > 0){ //A Pedestrian is Waiting
-         allRed(); // Turns RED all stoplights to prepare traffic for pedestrians
-         delay(Delay_time * red_time);// Holds the stoplight RED to clear the road
-         if((FlagA + FlagB) == 2){//2 pedestrians waiting
-          break;
-         }else{//Only 1 pedestrian waiting
-               if(FlagA == 1){
-                  break;
-               }else{
-                     global_state++;
-                     break;
-                }
-         }//Only 1 pedestrian waiting else end
-      }else{//No pedestrian waiting. This else is for the first If statement
-        global_state = 0;
-      }
-      break;
-    }// End bracket for Case 7
-    case 8:{//Pedestrian A Waiting
-      if(FlagA ==0){break;}//Skips this routine of there are no Pedestrian A waiting
-     
-      FlagA = 0;
-
-      PedAroutine();
-     
-      //Checks to see if pedestrian B is also waiting
-      if(FlagB == 1){break;}
-      else{global_state = 0;}
-      break;
-    }
-
-    case 9:{//Pedestrian B Waiting
-      FlagB = 0;
-
-      PedBroutine();
-
-      global_state = 0;
-      break;
-    }
-  //-----------------------------------------------------------------------
-     default:{//This should never happen, but if it does it turns on blinkers
-      FlagA = 0;
-      FlagB = 0;
-      global_state = -1;
-     };
-    }//end Switch
-}
-
+/* Set Flags ISR */
 void SetFlagN(void){// Pedestrian in N is waiting
   FlagN=1;
+  Delay_time = 500;
     Serial.println("INTERRUPT N");
 }
 
 void SetFlagE(void){// Pedestrian in E is waiting, CASE 9
   FlagE=1;
+  Delay_time = 500;
   Serial.println("INTERRUPT E");
 }
 
 void SetFlagS(void){// Pedestrian in S is waiting, CASE 9
   FlagS=1;
+  Delay_time = 500;
   Serial.println("INTERRUPT S");
 }
 
 void SetFlagW(void){// Pedestrian in W is waiting, CASE 9
   FlagW=1;
+  Delay_time = 500;
   Serial.println("INTERRUPT W");
 }
 
-void allRed(){//TO-DO: All stoplights are set to Red
-  SetNorthStoplight(1);
-  SetEastStoplight(1);
-  SetSouthStoplight(1);
-  SetWestStoplight(1);
-}
-
+/*Pedestrian Turn Functions
+  once called they will set all stoplights red
+  and iluminate the corresponding LED
+*/
 void NorthPed(){
       allRed();
+      Delay_time = 1000;
       //Turn on cross light and hold
       digitalWrite(NorthCross,HIGH);
       delay(Delay_time*cross_time);
@@ -402,10 +370,12 @@ void NorthPed(){
 
       //Turn off pedestrian crossing light
       digitalWrite(NorthCross,LOW);
+      FlagN = 0;
 }
 
 void EastPed(){
       allRed();
+      Delay_time = 1000;
       //Turn on cross light and hold
       digitalWrite(EastCross,HIGH);
       delay(Delay_time*cross_time);
@@ -420,11 +390,13 @@ void EastPed(){
 
       //Turn off pedestrian crossing light
       digitalWrite(EastCross,LOW);
+      FlagE=0;
 }
 
 void SouthPed(){
 
       allRed();
+      Delay_time = 1000;
       //Turn on cross light and hold
       digitalWrite(SouthCross,HIGH);
       delay(Delay_time*cross_time);
@@ -439,12 +411,14 @@ void SouthPed(){
 
       //Turn off pedestrian crossing light
       digitalWrite(SouthCross,LOW);
+      FlagS=0;
 
 }
 
 void WestPed(){
 
       allRed();
+      Delay_time = 1000;
       //Turn on cross light and hold
       digitalWrite(WestCross,HIGH);
       delay(Delay_time*cross_time);
@@ -459,14 +433,143 @@ void WestPed(){
 
       //Turn off pedestrian crossing light
       digitalWrite(WestCross,LOW);
+      FlagW=0;
 
 }
-   
+//////////////////////////////////////////////
+
+/* Makes all stoplights blink
+   Takes over for red_blinks * (2*blink_delay)
+*/
+void blinkStoplight(){
+  for(i=0;i<red_blinks;i++){
+    allRed();
+    delay(blink_delay);
+    allOff();
+    delay(blink_delay);
+  }
+}
+
+void allOff(){
+  SetNorthStoplight(5);
+  SetEastStoplight(5);
+  SetSouthStoplight(5);
+  SetWestStoplight(5);
+}
+
+//All stoplights are set to Red
+void allRed(){
+  SetNorthStoplight(1);
+  SetEastStoplight(1);
+  SetSouthStoplight(1);
+  SetWestStoplight(1);
+}
+
+bool flagChecker(){
+  return ((numberOfFlags())>0);
+}
+
+int numberOfFlags(){
+  return (FlagN + FlagS + FlagE + FlagW);
+}
+
+//Cycle function / Decision making
+void doByState(){// Desiscion making function. Decides what to do based on the global_state variable 
+  if(flagChecker()){
+    if((global_state == 2) || (global_state == 5) || (global_state == 8) || (global_state == 11)){//If it's already red do pedestrian and continue
+      saved_state = global_state;
+      global_state =14;
+      delay(2000);
+    }
+  }
+
+  switch (global_state) {
+    case 0:{//EMERGENCY stoplights will blink
+      blinkStoplight();
+      break;
+    }
+    case 1:{//All stoplights are turned Red
+      allRed();
+      delay(Delay_time * red_time);
+      break;
+    }
+    case 2:{//Stoplight N Green
+      SetNorthStoplight(3);
+      delay(Delay_time * green_time);
+      break;
+    }
+    case 3:{//Stoplight N Yellow
+      SetNorthStoplight(2);
+      delay(Delay_time * yellow_time);
+      break;
+    }
+    case 4:{//Stoplight N Red
+      allRed();
+      delay(Delay_time * red_time);
+      break;
+    }
+    case 5:{//Stoplight E Green
+      SetEastStoplight(3);
+      delay(Delay_time * green_time);
+      break;
+    }
+    case 6:{//Stoplight E Yellow
+      SetEastStoplight(2);
+      delay(Delay_time * yellow_time);
+      break;
+    }
+    case 7:{//Stoplight E Red
+      allRed();
+      delay(Delay_time * red_time);
+      break;
+    }
+    case 8:{//S Green
+      SetSouthStoplight(3);
+      delay(Delay_time * green_time);
+      break;
+    }
+    case 9:{//South Yellow
+      SetSouthStoplight(2);
+      delay(Delay_time * yellow_time);
+      break;
+    }
+    case 10:{//South Red
+      allRed();
+      delay(Delay_time * red_time);
+      break;
+    }
+    case 11:{//West Green
+      SetWestStoplight(3);
+      delay(Delay_time * green_time);
+      break;
+    }
+    case 12:{//West Yellow
+      SetWestStoplight(2);
+      delay(Delay_time * yellow_time);
+      break;
+    }
+    case 13:{//West Red
+      allRed();
+      global_state=1;
+      break;
+    }
+    case 14:{//flag is set
+      if(FlagN==1){NorthPed();}
+      if(FlagE==1){EastPed();}
+      if(FlagS==1){SouthPed();}
+      if(FlagW==1){WestPed();}
+      delay(2000);
+      global_state = saved_state-1;
+      break;
+    }
+  //-----------------------------------------------------------------------
+     default:{//This should never happen, but if it does it turns on blinkers
+      global_state = -1;
+     }
+    }//end Switch
+}
+
 void loop() {
     doByState();
     global_state = global_state + 1;
 }
-
-
-
-

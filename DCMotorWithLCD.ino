@@ -29,7 +29,7 @@ void setup() {
 //true or false
 void enableMotor(bool e){
   if(e){
-    digitalWrite(ENABLE,speed);
+    analogWrite(ENABLE,speed);
     Serial.print("Motor Enabled: speed = ");Serial.println(speed);
   }else{
     digitalWrite(ENABLE,LOW);

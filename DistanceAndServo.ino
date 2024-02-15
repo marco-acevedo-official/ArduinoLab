@@ -19,6 +19,7 @@ void loop(){
   a=sensor.DistanceAvg();
   delay(100);
   while(a<30){
+    Serial.println("Obstruction detected, attempting to clear.");
     updateServo=true;
     angle=0;
     moveServo();
